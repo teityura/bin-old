@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -eu
+
+if [ -p /dev/stdin ]; then
+    TXT=$(cat -)
+else
+    TXT=$*
+fi
+
+# 空白文字及び改行文字のみ
+if [ -z "$TXT" ] ; then
+    echo '正しい文字列を入力してください。'
+# スペース区切り
+elif [ $(echo -e "$TXT" | wc -l) -eq 1 ];  then
+    nl_txt='' # 改行されたテキスト
+    # TODO ループせずに正規表現等を使い、スペースごとの文字列を抽出し、整形するようにする
+    for line in $(echo -e "$TXT"); do
+        echo $line
+    done | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
+# 改行区切り
+else
+    echo "$TXT" | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
+fi
+
+exit 0
