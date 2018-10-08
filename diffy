@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -eu
+
+if [ $# -ne 2 ]; then
+    echo '引数が間違っています。'
+    echo 'ファイルを2つ指定してください。'
+    echo 'ex diffy file1 file2'
+    exit 1
+fi
+
+FILE1=$1
+FILE2=$2
+
+diff -ybBwW $(tput cols) $FILE1 $FILE2
+
+exit 0
