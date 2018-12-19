@@ -8,19 +8,60 @@ else
     TXT=$*
 fi
 
+function usage_exit()
+{
+    echo 1>&2 "
+Usage:  echo 'hoge strings' [-d ,] [-c 1]
+        cat piyo.txt | intxt [-d ,] [-c 1]
+
+    General options
+        -d
+            select delimiter (',' ':', '\\t', ...)
+        -c
+            select columns number [0-9]+
+        -h
+            help (this usage)
+"
+    exit 1
+}
+
+while getopts c:d:h OPT
+do
+    case "$OPT" in
+        d)  DELIMITER=$OPTARG ;;
+        c)  COLUMNS=$OPTARG ;;
+        h)  usage_exit ;;
+        \?) usage_exit ;;
+    esac
+done
+shift $((OPTIND - 1))
+set +u
+if [ -z "${DELIMITER}" ]; then
+    DELIMITER=' '
+fi
+if [ -z "${COLUMNS}" ]; then
+    COLUMNS='NF'
+fi
+set -u
+
 # 空白文字及び改行文字のみ
 if [ -z "$TXT" ] ; then
     echo '正しい文字列を入力してください。'
-# スペース区切り
-elif [ $(echo -e "$TXT" | wc -l) -eq 1 ];  then
+    usage_exit
+fi
+
+# 1行のスペース区切り
+if [ $(echo -e "$TXT" | wc -l) -eq 1 ];  then
     nl_txt='' # 改行されたテキスト
     # TODO ループせずに正規表現等を使い、スペースごとの文字列を抽出し、整形するようにする
     for line in $(echo -e "$TXT"); do
         echo $line
     done | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
-# 改行区切り
-else
-    echo "$TXT" | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
+    exit 0
 fi
 
+# 複数行の${DELIMITER}区切りの${COLUMNS}カラム目
+echo "$TXT" | awk NF \
+            | awk -F "${DELIMITER}" "{print \$${COLUMNS}}" \
+            | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
 exit 0
