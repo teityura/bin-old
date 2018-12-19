@@ -2,6 +2,7 @@
 
 set -eu
 
+# 標準入力解析
 if [ -p /dev/stdin ]; then
     TXT=$(cat -)
 else
@@ -25,6 +26,7 @@ Usage:  echo 'hoge strings' [-d ,] [-c 1]
     exit 1
 }
 
+# オプション解析
 while getopts c:d:h OPT
 do
     case "$OPT" in
@@ -35,6 +37,9 @@ do
     esac
 done
 shift $((OPTIND - 1))
+
+# オプション無指定の場合、
+# スペース区切りで最後の要素をデフォルトに指定
 set +u
 if [ -z "${DELIMITER}" ]; then
     DELIMITER=' '
@@ -52,8 +57,7 @@ fi
 
 # 1行のスペース区切り
 if [ $(echo -e "$TXT" | wc -l) -eq 1 ];  then
-    nl_txt='' # 改行されたテキスト
-    # TODO ループせずに正規表現等を使い、スペースごとの文字列を抽出し、整形するようにする
+    # TODO ループせずに正規表現等を使い、スペースごとの文字列を抽出し、整形させる
     for line in $(echo -e "$TXT"); do
         echo $line
     done | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
