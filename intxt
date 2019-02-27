@@ -16,6 +16,8 @@ Usage:  echo 'hoge strings' [-d ,] [-c 1]
         cat piyo.txt | intxt [-d ,] [-c 1]
 
     General options
+        -i
+            INSERT MODE enable
         -d
             select delimiter (',' ':', '\\t', ...)
         -c
@@ -26,12 +28,16 @@ Usage:  echo 'hoge strings' [-d ,] [-c 1]
     exit 1
 }
 
+# インサートモード{0:'無効', 1:'有効'}
+INSERT=0
+
 # オプション解析
-while getopts c:d:h OPT
+while getopts c:d:ih OPT
 do
     case "$OPT" in
         d)  DELIMITER=$OPTARG ;;
         c)  COLUMNS=$OPTARG ;;
+        i)  INSERT=1 ;; # INSERT MODE
         h)  usage_exit ;;
         \?) usage_exit ;;
     esac
@@ -55,14 +61,22 @@ if [ -z "$TXT" ] ; then
     usage_exit
 fi
 
-# 1行のスペース区切り
-if [ $(echo -e "$TXT" | wc -l) -eq 1 ];  then
-    # TODO ループせずに正規表現等を使い、スペースごとの文字列を抽出し、整形させる
-    for line in $(echo -e "$TXT"); do
-        echo $line
-    done | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
+# インサートモード
+if [ $INSERT -eq 1 ]; then
+    echo "$TXT" | awk NF \
+                | awk -F "${DELIMITER}" "{print \$${COLUMNS}}" \
+                | sed -E -e "s/^/('/g" -e "s/$/'), /g" | sed -E '$ s/,//g'
     exit 0
 fi
+
+# 1行のスペース区切り
+#if [ $(echo -e "$TXT" | wc -l) -eq 1 ];  then
+#    # TODO ループせずに正規表現等を使い、スペースごとの文字列を抽出し、整形させる
+#    for line in $(echo -e "$TXT"); do
+#        echo $line
+#    done | awk NF | sed -E -e "s/^/'/g" -e "s/$/', /g" | tr -d '\n' | sed -E -e 's/^/(/g' -e 's/, $/)\n/g'
+#    exit 0
+#fi
 
 # 複数行の${DELIMITER}区切りの${COLUMNS}カラム目
 echo "$TXT" | awk NF \
